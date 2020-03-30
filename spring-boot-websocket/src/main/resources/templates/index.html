@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>欢迎咨询</title>
+
+		<script type="text/javascript" src="/bootstrap/js/jquery-1.10.2.min.js" ></script>
+		<script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="/bootstrap/js/sockjs.min.js"></script>
+
+		<style type="text/css">
+			@import url("/bootstrap/css/bootstrap.min.css");
+		</style>
+
+	</head>
+	<body style="background: linear-gradient(90deg, rgba(0,172,193,1) 0%, rgba(84,58,183,1) 100%)">
+
+	<h1 align="center" style="color: white; font-weight: bold;margin-top: 5px;">欢迎咨询</h1>
+	<div class="container" style="margin-top: 30px;margin-bottom: 350px;">
+
+
+		<div class="col-sm-6 col-sm-offset-3">
+
+			<div align="center" style="margin-bottom: 20px;">
+				<button class="btn btn-default" onclick="Connect(this)" style="width: 100%;">联系客服</button>
+			</div>
+
+			<div align="center" class="thumbnail">
+				<div id="showmsg" style="overflow-y: auto;height: 300px; padding: 10px;"></div>
+				<textarea id="msg" class="form-control" rows="3" style="padding: 10px;"></textarea>
+				<button onclick="sendMsg()" class="btn btn-primary" style="width: 100%;">发送</button>
+			</div>
+
+		</div>
+
+	</div>
+
+
+	<script type="text/javascript">
+		var socket = null;
+		var showmsg = document.getElementById("showmsg");
+
+		//联系客服按钮方法
+		function Connect(self){
+
+			//适配不同的浏览器 创建Socket对象
+			if('WebSocket' in window){
+				socket = new WebSocket("ws://127.0.0.1/websocket");
+				console.log("浏览器内置的WebSocket");
+			}else if('MozWebSocket' in window){
+				//火狐浏览器
+				socket = new MozWebSocket("ws://127.0.0.1/websocket");
+				console.log("火狐浏览器内置的WebSocket");
+			}else{
+				//当浏览器不支持WebSocket 采用sockjs
+				socket = new SockJS("http://127.0.0.1/websocketjs");
+				console.log("采用sockjs");
+			}
+
+			self.disabled = 'disabled';
+
+
+			//连接成功后的回调方法
+			socket.onopen = function(){
+				console.log("WebSocket已连接");
+			}
+
+			//接收消息的时候触发
+			socket.onmessage = function(data){
+				console.log(data.data);
+				$('#showmsg').append('<p align="left">'+data.data+'</p>');
+
+				$('#showmsg').scrollTop($('#showmsg')[0].scrollHeight);//控制滚动条到最底部
+			}
+
+			//连接发生错误时的回调方法
+			socket.onerror = function(){
+				console.log("WebSocket发生错误");
+			}
+
+			socket.onclose = function(){
+				console.log("WebSocket关闭");
+			}
+
+		}
+
+
+		//发送消息
+		function sendMsg(){
+			var msg = $('#msg').val();//获取发送的内容
+			$('#msg').val('');//清除要发送的内容
+			$('#showmsg').append('<p align="right">'+msg+'</p>');
+
+			$('#showmsg').scrollTop($('#showmsg')[0].scrollHeight);//控制滚动条到最底部
+
+			socket.send(msg);//发送到服务器
+		}
+
+
+		//Ctrl + Enter快捷键发送消息
+		$(window).keydown(function (event) {
+			if (event.ctrlKey && event.keyCode == 13) {
+				sendMsg();
+			}
+		});
+
+	</script>
+		
+	</body>
+</html>
